@@ -1,7 +1,7 @@
 package org.example;
 
-import org.example.exception.LocationBeyondPlateauException;
-import org.example.exception.UnknownInstructionException;
+import org.example.exception.PositionBeyondPlateauException;
+import org.example.exception.PositionOccupiedException;
 
 public class Rover {
     private Position position;
@@ -9,23 +9,35 @@ public class Rover {
     private final Plateau plateau;
 
     public Rover(int x, int y, Direction direction, Plateau plateau) {
+        this(new Position(x, y), direction, plateau);
+    }
+
+    public Rover(Position position, Direction direction, Plateau plateau) {
         this.direction = direction;
         this.plateau = plateau;
-        if (plateau.isValidPosition(x, y)) {
-            position = new Position(x, y);
-        } else {
-            throw new LocationBeyondPlateauException();
+
+        if (!plateau.isValidPosition(position)) {
+            throw new PositionBeyondPlateauException(position);
         }
+        if (plateau.isOccupied(position)) {
+            throw new PositionOccupiedException(position);
+        }
+
+        this.position = position;
+        plateau.addOccupiedPosition(position);
     }
 
     public void processCommands(String commands) {
-        for (char command : commands.toCharArray()) {
-            switch (command) {
-                case 'L': direction = direction.turnLeft(); break;
-                case 'R': direction = direction.turnRight(); break;
-                case 'M': moveForward(); break;
-                default: throw new UnknownInstructionException(command);
-            }
+        commands.chars()
+                .mapToObj(c -> Command.fromChar((char) c))
+                .forEach(this::executeCommand);
+    }
+
+    private void executeCommand(Command command) {
+        switch (command) {
+            case L -> direction = direction.turnLeft();
+            case R -> direction = direction.turnRight();
+            case M -> moveForward();
         }
     }
 
@@ -37,11 +49,17 @@ public class Rover {
             case W -> new Position(position.x() - 1, position.y());
         };
 
-        if (plateau.isValidPosition(newPosition.x(), newPosition.y())) {
-            position = newPosition;
-        } else {
-            throw new LocationBeyondPlateauException();
+        if (plateau.isOccupied(newPosition)) {
+            throw new PositionOccupiedException(newPosition);
         }
+
+        if (!plateau.isValidPosition(newPosition)) {
+            throw new PositionBeyondPlateauException(newPosition);
+        }
+
+        plateau.updatePosition(position, newPosition);
+        position = newPosition;
+
     }
 
     public String reportPosition() {

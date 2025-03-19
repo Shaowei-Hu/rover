@@ -1,6 +1,7 @@
 package org.example;
 
-import org.example.exception.LocationBeyondPlateauException;
+import org.example.exception.PositionBeyondPlateauException;
+import org.example.exception.PositionOccupiedException;
 import org.example.exception.UnknownInstructionException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,9 +30,9 @@ class RoverTest {
             //when
             new Rover(6, 6, Direction.N, plateau);
             fail("Dropping should have thrown before!");
-        } catch (LocationBeyondPlateauException ex) {
+        } catch (PositionBeyondPlateauException ex) {
             //then
-            assertEquals("Location beyond the plateau!", ex.getMessage());
+            assertEquals("Position beyond the plateau: Position[x=6, y=6]", ex.getMessage());
         }
     }
 
@@ -107,7 +108,7 @@ class RoverTest {
             fail("Moving should have thrown before!");
         } catch (UnknownInstructionException ex) {
             //then
-            assertEquals("Unknown instruction 'B'!", ex.getMessage());
+            assertEquals("Unknown instruction: B", ex.getMessage());
         }
     }
 
@@ -120,10 +121,39 @@ class RoverTest {
             //when
             rover.processCommands("MMMMMMMM");
             fail("Moving should have thrown before!");
-        } catch (LocationBeyondPlateauException ex) {
+        } catch (PositionBeyondPlateauException ex) {
             //then
-            assertEquals("Location beyond the plateau!", ex.getMessage());
+            assertEquals("Position beyond the plateau: Position[x=2, y=6]", ex.getMessage());
         }
+    }
+
+    @Test
+    @DisplayName("two rovers landing on same position should throw")
+    void twoRoversLandingOnSamePositionShouldThrow() {
+        Plateau plateau = new Plateau(5, 5);
+        Rover rover1 = new Rover(1, 1, Direction.N, plateau);
+        try {
+            new Rover(1, 1, Direction.E, plateau); // Attempt to place second rover in same spot
+
+        } catch (PositionOccupiedException ex) {
+            assertEquals("Position occupied on the plateau: Position[x=1, y=1]", ex.getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("move into occupied position should throw")
+    void moveIntoOccupiedPositionShouldThrow() {
+        Plateau plateau = new Plateau(5, 5);
+        Rover rover1 = new Rover(1, 1, Direction.N, plateau);
+        Rover rover2 = new Rover(1, 2, Direction.S, plateau);
+        try {
+            rover2.processCommands("M"); // Attempt to move into occupied position
+
+        } catch (PositionOccupiedException ex) {
+            assertEquals("Position occupied on the plateau: Position[x=1, y=1]", ex.getMessage());
+            assertEquals("1 2 S", rover2.reportPosition());
+        }
+
     }
 
 }

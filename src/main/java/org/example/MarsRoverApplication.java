@@ -10,7 +10,7 @@ public class MarsRoverApplication {
 
     public static void main(String[] args) {
         if (args.length != 1) {
-            System.err.println("The program will be run with this command line: java -jar rover.jar input.txt");
+            System.err.println("The program need to be run with this command line: java -jar rover.jar input.txt");
             return;
         }
 
